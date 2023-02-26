@@ -1,4 +1,4 @@
-.PHONY: db build default test check-deps
+.PHONY: default check-deps dbup dbdown doc test test-examples test-coverage watch 
 
 DATABASE_URL:=postgresql://postgres:password@localhost:5432/postgres
 
@@ -7,16 +7,6 @@ default:
 
 check-deps:
 	cargo upgrade --dry-run --verbose
-
-check:
-	cargo clippy
-
-test-coverage:
-	cargo tarpaulin --out Html --implicit-test-threads
-	xdg-open tarpaulin-report.html
-
-watch:
-	cargo watch -w src --shell 'make test'
 
 dbup:
 	docker-compose up -d database 
@@ -32,9 +22,10 @@ doc:
 test: dbup doc
 	cargo test
 
-#
-# Examples
-#
+test-coverage:
+	cargo tarpaulin --out Html --implicit-test-threads
+	xdg-open tarpaulin-report.html
+
 test-examples: test
 	export DATABASE_URL=${DATABASE_URL}
 	psql ${DATABASE_URL} -c "DROP TABLE IF EXISTS metrics"
@@ -53,3 +44,5 @@ test-examples: test
 	cargo run --quiet --example load_csv 
 	psql ${DATABASE_URL} -c "SELECT count(*) FROM spotprices" | grep 9000
 
+watch:
+	cargo watch -w src --shell 'make test'
