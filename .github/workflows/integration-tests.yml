@@ -25,5 +25,3 @@ jobs:
     - name: Stop containers
       if: always()
       run: make dbdown
-
-    - run: echo "🍏 This job's status is ${{ job.status }}."
