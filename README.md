@@ -3,24 +3,10 @@
 An experimental crate for copying high-volumes of data into PostgreSQL using the tokio runtime.  `batch_copy` provides an actor interface to PostgreSQL's binary `COPY` mechanism.
 
 The core idea is to batch rows from multiple producers into (fewer, more efficient) COPY transactions.
-To send rows, create a `Handler` (generic over anything that implements the `BatchCopyRow` trait), clone it, move it into your tokio tasks, and invoke the `send` method.
 The actor task will recieve messages on a mpsc channel, buffer them, and periodically COPY to postgres.
+To send rows, create a `Handler` (generic over anything that implements the `BatchCopyRow` trait), clone it, move it into your tokio tasks, and invoke the `send` method.
 
 Built using `bb8` connection pool, the `tokio-postgres` ecosystem, and the ideas in Alice Ryhl's blog post and presentation [Actors with Tokio](https://ryhl.io/blog/actors-with-tokio/).
-
-## Advantages
-
-* Fits the Rust async model: clone the handler and send data from multiple producers using the tokio runtime.
-* Your Rust type -> SQL types: Inherits the type conversions from the `postgres-types` crate using the [`ToSQL`](https://docs.rs/tokio-postgres/latest/tokio_postgres/types/trait.ToSql.html#types) trait.
-* Speed: Significantly faster than INSERT when you have many producers. Less application lag.
-* Efficiency: fewer resources too! less bandwidth, less parsing, fewer transactions and network roundtrips.
-* Backpressure: when the database gets overloaded and the channel buffer fills up, the producing tasks start blocking.
-
-## Downsides
-
-* Durabilty: Buffered messages are not written to storage until they are flushed and committed.
-* Eventual consistency: Messages sent to the actor may not be immediately refelected by a SELECT.
-* Best-effort delivery: Currently, if the batch copy fails, all rows are discarded - the original tasks may be long gone, who would we report errors to?
 
 ## Resources
 
@@ -28,6 +14,22 @@ Built using `bb8` connection pool, the `tokio-postgres` ecosystem, and the ideas
 * [Examples](https://github.com/perrygeo/batch-copy/tree/main/examples)
 * TODO [Documentation]()
 * TODO [Crates.io]()
+
+## Rationale
+
+ Advantages
+
+* Fits the Rust async model: clone the handler and send data from multiple producers using the tokio runtime.
+* Your Rust type -> SQL types: Explicit type conversions using the [`ToSQL`](https://docs.rs/tokio-postgres/latest/tokio_postgres/types/trait.ToSql.html#types) trait from the `postgres-types` crate.
+* Speed: Significantly faster than INSERT when you have many producers. Removes a network roundtrip in the critical path.
+* Efficiency: less bandwidth, binary data over the wire, fewer transactions, and fewer connections required.
+* Backpressure: when the database gets overloaded and the channel buffer fills up, the producing tasks start blocking.
+
+Downsides
+
+* Durabilty: Buffered messages are not written to storage until they are flushed and committed.
+* Eventual consistency: Messages sent to the actor may not be immediately refelected by a SELECT.
+* Best-effort delivery: Currently, if the batch copy fails, all rows are discarded - the original tasks may be long gone, who would we report errors to?
 
 ## Install
 
