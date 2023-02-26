@@ -1,0 +1,31 @@
+[package]
+name = "batch-copy"
+version = "0.1.0"
+authors = ["perrygeo@gmail.com"]
+edition = "2021"
+publish = false
+keywords = ["postgres"]
+
+[dependencies]
+bb8 = { version = "0.8.0" }
+bb8-postgres = { version = "0.8.1" }
+builder-pattern = { version = "0.4.2" }
+futures-util = { version = "0.3.26" }
+log = "0.4.17"
+rand = { version = "0.8.5" }
+thiserror = { version = "1.0.38" }
+tokio = { version = "1.25.0", features = ["macros"] }
+tokio-postgres = { version = "0.7.7" }
+
+[dev-dependencies]
+anyhow = "1.0.69"
+dotenv = "0.15.0"
+csv-async = { version = "1.1", features = ["tokio", "with_serde"] }
+glob = "0.3.1"
+chrono = { version = "0.4.23", features = ["serde"] }
+serde = { version = "1.0.152", features = ["derive"] }
+futures = "0.3.26"
+tokio-test = "0.4.2"
+bb8-postgres = { version = "0.8.1", features = ["with-chrono-0_4", "with-geo-types-0_6", "with-uuid-1", "with-serde_json-1"] }
+tokio-postgres = { version = "0.7.7", features = ["with-chrono-0_4", "with-geo-types-0_7"] }
+tokio = { version = "1.25.0", features = ["full"] }
