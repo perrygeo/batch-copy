@@ -4,7 +4,6 @@ jobs:
   integration-tests:
     timeout-minutes: 1
     runs-on: ubuntu-latest
-    rust: stable
 
     steps:
     - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
@@ -12,13 +11,16 @@ jobs:
     - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
 
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v3
+
+    - name: Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
 
     - name: Start containers
       run: make dbup 
 
     - name: Run tests
-      run: npm run test
+      run: make test-examples 
 
     - name: Stop containers
       if: always()
