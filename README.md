@@ -1,6 +1,6 @@
 # batch-copy
 
-An experimental crate for copying high-volumes of data into PostgreSQL using the tokio runtime.  `batch_copy` provides an actor interface to PostgreSQL's binary `COPY` mechanism.
+An experimental crate for copying high-volumes of data into PostgreSQL using the tokio runtime. `batch_copy` provides an actor interface to PostgreSQL's binary `COPY` mechanism.
 
 The core idea is to batch rows from multiple producers into (fewer, more efficient) COPY transactions.
 The actor task will recieve messages on a mpsc channel, buffer them, and periodically COPY to postgres.
@@ -10,26 +10,26 @@ Built using `bb8` connection pool, the `tokio-postgres` ecosystem, and the ideas
 
 ## Resources
 
-* [Source Repo](https://github.com/perrygeo/batch-copy)
-* [Examples](https://github.com/perrygeo/batch-copy/tree/main/examples)
-* TODO [Documentation]()
-* TODO [Crates.io]()
+- [Source Repo](https://github.com/perrygeo/batch-copy)
+- [Examples](https://github.com/perrygeo/batch-copy/tree/main/examples)
+- TODO [Documentation]()
+- TODO [Crates.io]()
 
 ## Rationale
 
- Advantages
+Advantages
 
-* Fits the Rust async model: clone the handler and send data from multiple producers using the tokio runtime.
-* Your Rust type -> SQL types: Explicit type conversions using the [`ToSQL`](https://docs.rs/tokio-postgres/latest/tokio_postgres/types/trait.ToSql.html#types) trait from the `postgres-types` crate.
-* Speed: Significantly faster than INSERT when you have many producers. Removes a network roundtrip in the critical path.
-* Efficiency: less bandwidth, binary data over the wire, fewer transactions, and fewer connections required.
-* Backpressure: when the database gets overloaded and the channel buffer fills up, the producing tasks start blocking.
+- Fits the Rust async model: clone the handler and send data from multiple producers using the tokio runtime.
+- Your Rust type -> SQL types: Explicit type conversions using the [`ToSQL`](https://docs.rs/tokio-postgres/latest/tokio_postgres/types/trait.ToSql.html#types) trait from the `postgres-types` crate.
+- Speed: Significantly faster than INSERT when you have many producers. Removes a network roundtrip in the critical path.
+- Efficiency: less bandwidth, binary data over the wire, fewer transactions, and fewer connections required.
+- Backpressure: when the database gets overloaded and the channel buffer fills up, the producing tasks start blocking.
 
 Downsides
 
-* Durabilty: Buffered messages are not written to storage until they are flushed and committed.
-* Eventual consistency: Messages sent to the actor may not be immediately refelected by a SELECT.
-* Best-effort delivery: Currently, if the batch copy fails, all rows are discarded - the original tasks may be long gone, who would we report errors to?
+- Durabilty: Buffered messages are not written to storage until they are flushed and committed.
+- Eventual consistency: Messages sent to the actor may not be immediately refelected by a SELECT.
+- Best-effort delivery: Currently, if the batch copy fails, all rows are discarded - the original tasks may be long gone, who would we report errors to?
 
 ## Install
 

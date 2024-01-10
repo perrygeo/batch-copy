@@ -19,8 +19,10 @@ dbdown:
 doc:
 	cargo doc --no-deps
 
-test: dbup doc
+test: dbup
 	cargo test
+
+test-all: test doc test-coverage test-examples
 
 test-coverage:
 	cargo tarpaulin --out Html --implicit-test-threads
@@ -37,11 +39,11 @@ test-examples: test
 	psql ${DATABASE_URL} -c "DROP TABLE IF EXISTS users"
 	psql ${DATABASE_URL} -c "CREATE TABLE IF NOT EXISTS users (id BIGINT NOT NULL, id2 BIGINT, name TEXT);"
 	cargo run --quiet --example multi_producer
-	psql ${DATABASE_URL} -c "SELECT count(*) FROM users" | grep 40960 
+	psql ${DATABASE_URL} -c "SELECT count(*) FROM users" | grep 40960
 
 	psql ${DATABASE_URL} -c "DROP TABLE IF EXISTS spotprices"
 	psql ${DATABASE_URL} -c "CREATE TABLE spotprices (dt TIMESTAMPTZ, instance TEXT, os TEXT, region TEXT, az TEXT, price FLOAT8);"
-	cargo run --quiet --example load_csv 
+	cargo run --quiet --example load_csv
 	psql ${DATABASE_URL} -c "SELECT count(*) FROM spotprices" | grep 9000
 
 watch:
