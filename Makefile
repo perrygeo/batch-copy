@@ -9,12 +9,12 @@ check-deps:
 	cargo upgrade --dry-run --verbose
 
 dbup:
-	docker-compose up -d database 
+	cd db && docker-compose up -d database 
 	while ! nc -z localhost 5432; do sleep 1; echo "waiting on postgres..."; done;
 	docker ps | grep batch
 
 dbdown:
-	docker-compose down
+	cd db && docker-compose down
 
 doc:
 	cargo doc --no-deps
@@ -24,7 +24,7 @@ test: dbup doc
 
 test-coverage:
 	cargo tarpaulin --out Html --implicit-test-threads
-	xdg-open tarpaulin-report.html
+	open tarpaulin-report.html
 
 test-examples: test
 	export DATABASE_URL=${DATABASE_URL}

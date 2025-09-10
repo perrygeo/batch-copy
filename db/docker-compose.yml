@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  database:
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf -c hba_file=/etc/postgresql/pg_hba.conf
+    container_name: batch-copy-database
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    image: postgres:16.9-bullseye
+    ports:
+      - "127.0.0.1:5432:5432"
+    expose:
+      - "5432"
+    restart: unless-stopped
+    volumes:
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh  # where 'main' database is created
+      - pgdata:/var/lib/postgresql/data                      # storage in docker volume
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf    # configuration
+      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf            # access rules
+
+volumes:
+  pgdata:
+    driver: local
