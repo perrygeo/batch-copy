@@ -69,8 +69,8 @@ async fn copy_csv(path: PathBuf, copier: Handler<SpotPrice>) -> (PathBuf, usize,
     while let Some(result) = results.next().await {
         if let Ok((dtstr, instance, os, region_az, price)) = result {
             // Parse date, support two forms
-            let dt = match Utc.datetime_from_str(dtstr.as_ref(), "%Y-%m-%d %H:%M:%S%z") {
-                Ok(dt) => dt,
+            let dt = match DateTime::parse_from_str(dtstr.as_ref(), "%Y-%m-%d %H:%M:%S%z") {
+                Ok(d) => d.into(),
                 Err(_) => {
                     eprintln!("error, cannot parse datetime, skipping");
                     skipped += 1;
