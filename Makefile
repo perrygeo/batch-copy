@@ -9,12 +9,12 @@ check-deps:
 	cargo upgrade --dry-run --verbose
 
 dbup:
-	cd db && docker-compose up -d database 
+	cd db && docker compose up -d database 
 	while ! nc -z localhost 5432; do sleep 1; echo "waiting on postgres..."; done;
 	docker ps | grep batch
 
 dbdown:
-	cd db && docker-compose down
+	cd db && docker compose down
 
 doc:
 	cargo doc --no-deps
