@@ -1,5 +1,7 @@
 # batch-copy
 
+[![batch-copy](https://github.com/perrygeo/batch-copy/actions/workflows/tests.yml/badge.svg)](https://github.com/perrygeo/batch-copy/actions/workflows/tests.yml)
+
 An async Rust library for high-throughput ingestion into PostgreSQL using binary `COPY`.
 
 `batch-copy` batches rows from many concurrent producers into efficient bulk `COPY` transactions.
