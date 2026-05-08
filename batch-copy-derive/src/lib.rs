@@ -67,8 +67,8 @@ fn derive_impl(input: DeriveInput) -> syn::Result<TokenStream2> {
         .map(|f| f.ident.as_ref().unwrap())
         .collect();
 
-    let boxes = field_idents.iter().map(|id| {
-        quote! { ::std::boxed::Box::from(&self.#id) }
+    let pushes = field_idents.iter().map(|id| {
+        quote! { out.push(&self.#id as &(dyn ::batch_copy::__private::ToSql + Sync)); }
     });
 
     let ddl_infos: Vec<(String, bool)> = fields
@@ -102,8 +102,8 @@ fn derive_impl(input: DeriveInput) -> syn::Result<TokenStream2> {
             const TYPES: &'static [::batch_copy::__private::Type] = &[
                 #(#pg_types),*
             ];
-            fn binary_copy_vec(&self) -> ::std::vec::Vec<::std::boxed::Box<dyn ::batch_copy::__private::ToSql + Sync + Send + '_>> {
-                vec![#(#boxes),*]
+            fn fill_copy_refs<'a>(&'a self, out: &mut ::std::vec::Vec<&'a (dyn ::batch_copy::__private::ToSql + Sync)>) {
+                #(#pushes)*
             }
         }
     })
