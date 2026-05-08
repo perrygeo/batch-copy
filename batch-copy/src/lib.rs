@@ -6,15 +6,15 @@ use tokio_postgres::types::{ToSql, Type};
 pub mod actor;
 /// Potential error states
 pub mod errors;
-/// The handler takes BatchCopyRow values and sends them to the actor on a channel.
-/// Handlers are inexpensive to clone and can be used on multiple threads/tasks.
+/// The copier takes BatchCopyRow values and sends them to the actor on a channel.
+/// Copiers are inexpensive to clone and can be used on multiple threads/tasks.
 pub mod handler;
 
 // Public API
 
-/// The handler takes BatchCopyRow values and sends them to the actor on a channel.
-/// Handlers are inexpensive to clone and can be used on multiple threads/tasks.
-pub use handler::{Configuration, Handler};
+/// The copier takes BatchCopyRow values and sends them to the actor on a channel.
+/// Copiers are inexpensive to clone and can be used on multiple threads/tasks.
+pub use handler::{Configuration, Copier};
 
 pub use batch_copy_derive::BatchCopy;
 

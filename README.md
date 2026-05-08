@@ -19,8 +19,8 @@ Built on `bb8`, `tokio-postgres`, and the actor pattern from [Actors with Tokio]
 
 **Advantages**
 
-* Fits the Rust async model: clone the handler and send data from multiple producers in parallel.
-* Schema-validated at startup: `Handler::new()` runs a `CHECK_STATEMENT` against the live table so type mismatches fail fast, not silently.
+* Fits the Rust async model: clone the copier and send data from multiple producers in parallel.
+* Schema-validated at startup: `Copier::new()` runs a `CHECK_STATEMENT` against the live table so type mismatches fail fast, not silently.
 * Fast: binary `COPY` is significantly faster than `INSERT` for bulk loads; no per-row round-trips.
 * Efficient: binary encoding, fewer transactions, fewer connections.
 * Backpressure: when the database falls behind, the MPSC channel fills and producers block automatically.
@@ -50,7 +50,7 @@ CREATE TABLE metrics (url TEXT, latency_ms BIGINT);
 ```
 
 ```rust,no_run
-use batch_copy::{BatchCopy, Configuration, Handler};
+use batch_copy::{BatchCopy, Configuration, Copier};
 
 #[derive(Debug, Clone, BatchCopy)]
 #[batch_copy(table = "metrics")]
@@ -63,7 +63,7 @@ struct RequestMetric {
 async fn main() {
     let url = std::env::var("DATABASE_URL").unwrap();
     let copy_cfg = Configuration::new().database_url(url).build();
-    let copier = Handler::<RequestMetric>::new(copy_cfg).await.unwrap();
+    let copier = Copier::<RequestMetric>::new(copy_cfg).await.unwrap();
 
     copier
         .send(RequestMetric {
@@ -77,7 +77,7 @@ async fn main() {
 }
 ```
 
-`Handler` is cheap to clone — move clones into as many tokio tasks as you need:
+`Copier` is cheap to clone — move clones into as many tokio tasks as you need:
 
 ```rust,no_run
 let mut tasks = vec![];

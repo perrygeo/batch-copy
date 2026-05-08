@@ -14,7 +14,7 @@ use crate::BatchCopyRow;
 type Pool = bb8::Pool<PostgresConnectionManager<NoTls>>;
 
 #[derive(Clone, Debug)]
-pub struct Handler<T>
+pub struct Copier<T>
 where
     T: BatchCopyRow + Send,
 {
@@ -50,7 +50,7 @@ pub struct Configuration {
     pub pool_connect_timeout_sec: u64,
 }
 
-impl<T> Handler<T>
+impl<T> Copier<T>
 where
     T: BatchCopyRow + Send + Sync + Clone + Debug + 'static,
 {

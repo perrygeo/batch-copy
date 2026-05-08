@@ -1,4 +1,4 @@
-use batch_copy::{BatchCopy, Configuration, Handler};
+use batch_copy::{BatchCopy, Configuration, Copier};
 
 // To be copied to a postgres table with the following DDL:
 //   CREATE TABLE metrics (url TEXT, latency_ms BIGINT);
@@ -42,7 +42,7 @@ async fn main() {
         .build();
 
     // Basic usage
-    let copier = Handler::<RequestMetric>::new(copy_cfg).await.unwrap();
+    let copier = Copier::<RequestMetric>::new(copy_cfg).await.unwrap();
     copier
         .send(RequestMetric {
             url: String::from("/hello/world"),

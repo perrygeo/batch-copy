@@ -1,4 +1,4 @@
-use batch_copy::{BatchCopy, Configuration, Handler};
+use batch_copy::{BatchCopy, Configuration, Copier};
 use tokio_postgres::NoTls;
 
 #[derive(Debug, Clone, BatchCopy)]
@@ -33,7 +33,7 @@ async fn test_copy_actor() {
 
     // Actual test
     let copy_cfg = Configuration::new().database_url(url).build();
-    let copier = Handler::<TestRow>::new(copy_cfg).await.unwrap();
+    let copier = Copier::<TestRow>::new(copy_cfg).await.unwrap();
     let tr = TestRow {
         a: String::from("/hello/world"),
         b: 42,

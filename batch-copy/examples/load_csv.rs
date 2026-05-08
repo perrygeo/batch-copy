@@ -8,7 +8,7 @@ use csv_async::AsyncReaderBuilder;
 use glob::glob;
 use tokio::fs::File;
 use tokio::task::JoinSet;
-use batch_copy::{BatchCopy, Configuration, Handler};
+use batch_copy::{BatchCopy, Configuration, Copier};
 
 #[derive(Debug, Clone, BatchCopy)]
 #[batch_copy(table = "spotprices")]
@@ -22,7 +22,7 @@ struct SpotPrice {
 }
 
 // An async producer function which uses the copier to send rows
-async fn copy_csv(path: PathBuf, copier: Handler<SpotPrice>) -> (PathBuf, usize, usize) {
+async fn copy_csv(path: PathBuf, copier: Copier<SpotPrice>) -> (PathBuf, usize, usize) {
     let file = File::open(&path).await.unwrap();
     let mut rdr = AsyncReaderBuilder::new()
         .has_headers(false)
@@ -88,7 +88,7 @@ async fn main() -> Result<()> {
         .max_rows_per_batch(80000)
         .max_channel_capacity(80000)
         .build();
-    let copier = Handler::<SpotPrice>::new(copy_cfg).await?;
+    let copier = Copier::<SpotPrice>::new(copy_cfg).await?;
 
     // Spawn a task for each input CSV
     let mut tasks = JoinSet::new();
