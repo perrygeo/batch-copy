@@ -1,7 +1,7 @@
 name: batch-copy
 on: [push]
 jobs:
-  tests:
+  integration-tests:
     timeout-minutes: 10
     runs-on: ubuntu-latest
 
