@@ -8,11 +8,10 @@ use csv_async::AsyncReaderBuilder;
 use glob::glob;
 use tokio::fs::File;
 use tokio::task::JoinSet;
-use tokio_postgres::types::{ToSql, Type};
+use batch_copy::{BatchCopy, Configuration, Handler};
 
-use batch_copy::{BatchCopyRow, Configuration, Handler};
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, BatchCopy)]
+#[batch_copy(table = "spotprices")]
 struct SpotPrice {
     dt: DateTime<Utc>,
     instance: String,
@@ -20,33 +19,6 @@ struct SpotPrice {
     region: String,
     az: String,
     price: f64,
-}
-
-// Generic types of Handler must implement BatchCopyRow
-impl BatchCopyRow for SpotPrice {
-    const CHECK_STATEMENT: &'static str =
-        "SELECT dt, instance, os, region, az, price FROM spotprices LIMIT 0";
-    const COPY_STATEMENT: &'static str =
-        "COPY spotprices (dt, instance, os, region, az, price) FROM STDIN (FORMAT binary)";
-    const TYPES: &'static [Type] = &[
-        Type::TIMESTAMPTZ,
-        Type::TEXT,
-        Type::TEXT,
-        Type::TEXT,
-        Type::TEXT,
-        Type::FLOAT8,
-    ];
-
-    fn binary_copy_vec(&self) -> Vec<Box<(dyn ToSql + Sync + Send + '_)>> {
-        vec![
-            Box::from(&self.dt),
-            Box::from(&self.instance),
-            Box::from(&self.os),
-            Box::from(&self.region),
-            Box::from(&self.az),
-            Box::from(&self.price),
-        ]
-    }
 }
 
 // An async producer function which uses the copier to send rows

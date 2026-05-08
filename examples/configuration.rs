@@ -1,25 +1,12 @@
-use batch_copy::{BatchCopyRow, Configuration, Handler};
-use tokio_postgres::types::{ToSql, Type};
+use batch_copy::{BatchCopy, Configuration, Handler};
 
 // To be copied to a postgres table with the following DDL:
 //   CREATE TABLE metrics (url TEXT, latency_ms BIGINT);
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, BatchCopy)]
+#[batch_copy(table = "metrics")]
 struct RequestMetric {
     url: String,
     latency_ms: i64,
-}
-
-// Generic types of BatchCopyHandler must implement BatchCopyRow
-// Here we map our struct fields to postgres copy semantics
-impl BatchCopyRow for RequestMetric {
-    const CHECK_STATEMENT: &'static str = "SELECT url, latency_ms FROM metrics LIMIT 0";
-    const COPY_STATEMENT: &'static str =
-        "COPY metrics (url, latency_ms) FROM STDIN (FORMAT binary)";
-    const TYPES: &'static [Type] = &[Type::TEXT, Type::INT8];
-
-    fn binary_copy_vec(&self) -> Vec<Box<(dyn ToSql + Sync + Send + '_)>> {
-        vec![Box::from(&self.url), Box::from(&self.latency_ms)]
-    }
 }
 
 #[tokio::main]

@@ -1,23 +1,11 @@
-use batch_copy::{BatchCopyRow, Configuration, Handler};
-use tokio_postgres::{
-    types::{ToSql, Type},
-    NoTls,
-};
+use batch_copy::{BatchCopy, Configuration, Handler};
+use tokio_postgres::NoTls;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, BatchCopy)]
+#[batch_copy(table = "testtable")]
 struct TestRow {
     a: String,
     b: i64,
-}
-
-impl BatchCopyRow for TestRow {
-    const CHECK_STATEMENT: &'static str = "SELECT a, b FROM testtable LIMIT 0";
-    const COPY_STATEMENT: &'static str = "COPY testtable (a, b) FROM STDIN (FORMAT binary)";
-    const TYPES: &'static [Type] = &[Type::TEXT, Type::INT8];
-
-    fn binary_copy_vec(&self) -> Vec<Box<(dyn ToSql + Sync + Send + '_)>> {
-        vec![Box::from(&self.a), Box::from(&self.b)]
-    }
 }
 
 #[tokio::test]

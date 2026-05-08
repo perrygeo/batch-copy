@@ -16,11 +16,18 @@ pub mod handler;
 /// Handlers are inexpensive to clone and can be used on multiple threads/tasks.
 pub use handler::{Configuration, Handler};
 
+pub use batch_copy_derive::BatchCopy;
+
+#[doc(hidden)]
+pub mod __private {
+    pub use tokio_postgres::types::{ToSql, Type};
+}
+
 /// translate your struct to postgres details
 pub trait BatchCopyRow {
     const TYPES: &'static [Type];
     const COPY_STATEMENT: &'static str;
     const CHECK_STATEMENT: &'static str;
 
-    fn binary_copy_vec(&self) -> Vec<Box<(dyn ToSql + Sync + Send + '_)>>;
+    fn binary_copy_vec(&self) -> Vec<Box<dyn ToSql + Sync + Send + '_>>;
 }

@@ -1,29 +1,14 @@
 #![allow(clippy::clone_on_copy)]
 use anyhow::Result;
-use tokio_postgres::types::{ToSql, Type};
 
-use batch_copy::{BatchCopyRow, Configuration, Handler};
+use batch_copy::{BatchCopy, Configuration, Handler};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, BatchCopy)]
+#[batch_copy(table = "users")]
 struct MyData {
     id: i64,
     id2: i64,
     name: String,
-}
-
-// Generic types of BatchCopyHandler must implement BatchCopyRow
-impl BatchCopyRow for MyData {
-    const CHECK_STATEMENT: &'static str = "SELECT id, id2, name FROM users LIMIT 0";
-    const COPY_STATEMENT: &'static str = "COPY users (id, id2, name) FROM STDIN (FORMAT binary)";
-    const TYPES: &'static [Type] = &[Type::INT8, Type::INT8, Type::TEXT];
-
-    fn binary_copy_vec(&self) -> Vec<Box<(dyn ToSql + Sync + Send + '_)>> {
-        vec![
-            Box::from(&self.id),
-            Box::from(&self.id2),
-            Box::from(&self.name),
-        ]
-    }
 }
 
 #[tokio::main]
