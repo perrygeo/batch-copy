@@ -28,21 +28,21 @@ test-coverage:
 
 test-examples: test
 	export DATABASE_URL=${DATABASE_URL}
-	psql ${DATABASE_URL} -c "DROP TABLE IF EXISTS metrics"
-	psql ${DATABASE_URL} -c "CREATE TABLE metrics (url TEXT, latency_ms BIGINT);"
+	@psql ${DATABASE_URL} -c "DROP TABLE IF EXISTS metrics"
+	@psql ${DATABASE_URL} -c "CREATE TABLE metrics (url TEXT, latency_ms BIGINT);"
 	cargo run --quiet --example basic
 	cargo run --quiet --example configuration
-	psql ${DATABASE_URL} -c "SELECT count(*) FROM metrics where latency_ms = 42" | grep 2
+	@psql ${DATABASE_URL} -c "SELECT count(*) FROM metrics where latency_ms = 42" | grep 2 > /dev/null
 
-	psql ${DATABASE_URL} -c "DROP TABLE IF EXISTS users"
-	psql ${DATABASE_URL} -c "CREATE TABLE IF NOT EXISTS users (id BIGINT NOT NULL, id2 BIGINT, name TEXT);"
+	@psql ${DATABASE_URL} -c "DROP TABLE IF EXISTS users"
+	@psql ${DATABASE_URL} -c "CREATE TABLE IF NOT EXISTS users (id BIGINT NOT NULL, id2 BIGINT, name TEXT);"
 	cargo run --quiet --example multi_producer
-	psql ${DATABASE_URL} -c "SELECT count(*) FROM users" | grep 40960 
+	@psql ${DATABASE_URL} -c "SELECT count(*) FROM users" | grep 40960 > /dev/null
 
-	psql ${DATABASE_URL} -c "DROP TABLE IF EXISTS spotprices"
-	psql ${DATABASE_URL} -c "CREATE TABLE spotprices (dt TIMESTAMPTZ, instance TEXT, os TEXT, region TEXT, az TEXT, price FLOAT8);"
+	@psql ${DATABASE_URL} -c "DROP TABLE IF EXISTS spotprices"
+	@psql ${DATABASE_URL} -c "CREATE TABLE spotprices (dt TIMESTAMPTZ, instance TEXT, os TEXT, region TEXT, az TEXT, price FLOAT8);"
 	cargo run --quiet --example load_csv 
-	psql ${DATABASE_URL} -c "SELECT count(*) FROM spotprices" | grep 9000
+	@psql ${DATABASE_URL} -c "SELECT count(*) FROM spotprices" | grep 9000 > /dev/null
 
 test-fail:
 	export DATABASE_URL=${DATABASE_URL}
