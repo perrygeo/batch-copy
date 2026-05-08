@@ -1,2 +1,3 @@
 [workspace]
 members = ["batch-copy", "batch-copy-derive"]
+resolver = "2"
