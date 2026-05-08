@@ -55,11 +55,11 @@ where
     T: BatchCopyRow + Send + Sync + Clone + Debug + 'static,
 {
     pub async fn new(cfg: Configuration) -> Result<Self, BatchCopyDatabaseError> {
-        // Create internal database pool
         let mgr = PostgresConnectionManager::new_from_stringlike(
             cfg.database_url,
             tokio_postgres::NoTls,
         )?;
+
         let pool = Pool::builder()
             .max_size(cfg.pool_max_size)
             .max_lifetime(Some(Duration::from_secs(cfg.pool_max_lifetime_sec)))
@@ -71,8 +71,13 @@ where
         // Check connection and bail in case of fatal errors
         match pool.get().await {
             Ok(conn) => match conn.simple_query(T::CHECK_STATEMENT).await.map(|_| ()) {
-                Err(e) => return Err(BatchCopyDatabaseError::BadTable(e)),
-                _ => true, // good
+                Err(e) => {
+                    return Err(BatchCopyDatabaseError::SchemaCheckFailed {
+                        source: e,
+                        ddl: T::DDL_STATEMENT.to_string(),
+                    })
+                }
+                _ => true,
             },
             Err(_) => return Err(BatchCopyDatabaseError::BadConnection),
         };
@@ -93,6 +98,10 @@ where
             .await
             .expect("sending a message should not fail");
         rx.await.expect("actor was killed");
+    }
+
+    pub fn ddl(&self) -> &'static str {
+        T::DDL_STATEMENT
     }
 
     pub async fn flush(&self) {

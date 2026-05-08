@@ -127,6 +127,33 @@ struct Event {
 }
 ```
 
+## DDL generation
+
+`copier.ddl()` returns a best-approximation `CREATE TABLE` statement based on the struct's field names and types. This is useful for bootstrapping a new table or quickly checking the expected schema:
+
+```rust,no_run
+let copier = Copier::<RequestMetric>::new(copy_cfg).await?;
+println!("{}", copier.ddl());
+// CREATE TABLE metrics (
+//     url TEXT NOT NULL,
+//     latency_ms BIGINT NOT NULL
+// );
+```
+
+`Option<T>` fields are rendered without `NOT NULL`; all other fields include it.
+
+If `Copier::new()` fails because the schema check query returns an error (table missing, column type mismatch, etc.), the error message automatically includes the DDL hint so you know exactly what to run:
+
+```
+Table schema check failed: relation "metrics" does not exist
+
+Hint — try running:
+CREATE TABLE metrics (
+    url TEXT NOT NULL,
+    latency_ms BIGINT NOT NULL
+);
+```
+
 ## Configuration
 
 All settings are optional and have sensible defaults:
