@@ -71,27 +71,15 @@ where
         pin_mut!(writer);
 
         let mut errors = false;
-        for row in target_rows.into_iter() {
-            let result = {
-                // We own the row here, surely there's a better way to do this
-                // without intermediate Vecs - TODO
-                let boxes = row.binary_copy_vec();
-                let row_refs: Vec<&_> = boxes
-                    .iter()
-                    .map(|x| {
-                        // Convert the to a dyn reference
-                        &**x as &(dyn ToSql + Sync)
-                    })
-                    .collect();
-
-                writer.as_mut().write(row_refs.as_slice()).await
-            };
-
-            if let Err(e) = result {
+        let mut row_refs: Vec<&(dyn ToSql + Sync)> = Vec::with_capacity(T::TYPES.len());
+        for row in target_rows.iter() {
+            row_refs.clear();
+            row.fill_copy_refs(&mut row_refs);
+            if let Err(e) = writer.as_mut().write(row_refs.as_slice()).await {
                 log::error!("Error in COPY:\n\t{e}");
                 errors = true;
                 break;
-            };
+            }
         }
 
         if !errors {
