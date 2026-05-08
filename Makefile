@@ -1,9 +1,9 @@
+default:
+	@grep '^[a-zA-Z_-]*:' $(MAKEFILE_LIST) | grep -v '=' | cut -d: -f1
+
 .PHONY: default check-deps dbup dbdown doc test test-examples test-coverage watch 
 
 DATABASE_URL:=postgresql://postgres:password@localhost:5432/postgres
-
-default:
-	cat Makefile | grep ":"
 
 check-deps:
 	cargo upgrade --dry-run --verbose
