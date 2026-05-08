@@ -11,7 +11,7 @@ Built on `bb8`, `tokio-postgres`, and the actor pattern from [Actors with Tokio]
 ## Resources
 
 * [Source Repo](https://github.com/perrygeo/batch-copy)
-* [Examples](https://github.com/perrygeo/batch-copy/tree/main/examples)
+* [Examples](https://github.com/perrygeo/batch-copy/tree/main/batch-copy/examples)
 
 ## Rationale
 

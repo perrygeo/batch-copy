@@ -77,7 +77,7 @@ async fn copy_csv(path: PathBuf, copier: Handler<SpotPrice>) -> (PathBuf, usize,
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let paths = glob("./examples/spotprice*.csv")?;
+    let paths = glob(&format!("{}/examples/spotprice*.csv", env!("CARGO_MANIFEST_DIR")))?;
 
     // Setup the copy actor with the database url
     let url = std::env::var("DATABASE_URL")
