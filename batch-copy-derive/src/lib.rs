@@ -71,10 +71,34 @@ fn derive_impl(input: DeriveInput) -> syn::Result<TokenStream2> {
         quote! { ::std::boxed::Box::from(&self.#id) }
     });
 
+    let ddl_infos: Vec<(String, bool)> = fields
+        .iter()
+        .map(field_ddl_info)
+        .collect::<syn::Result<_>>()?;
+
+    let col_defs: Vec<String> = field_names
+        .iter()
+        .zip(&ddl_infos)
+        .map(|(col, (ddl_type, nullable))| {
+            if *nullable {
+                format!("    {col} {ddl_type}")
+            } else {
+                format!("    {col} {ddl_type} NOT NULL")
+            }
+        })
+        .collect();
+
+    let ddl_stmt = format!(
+        "CREATE TABLE {} (\n{}\n);",
+        table_name,
+        col_defs.join(",\n")
+    );
+
     Ok(quote! {
         impl ::batch_copy::BatchCopyRow for #name {
             const CHECK_STATEMENT: &'static str = #check_stmt;
             const COPY_STATEMENT: &'static str = #copy_stmt;
+            const DDL_STATEMENT: &'static str = #ddl_stmt;
             const TYPES: &'static [::batch_copy::__private::Type] = &[
                 #(#pg_types),*
             ];
@@ -133,6 +157,91 @@ fn field_pg_type(field: &syn::Field) -> syn::Result<TokenStream2> {
              e.g. #[pg(TIMESTAMPTZ)], #[pg(JSONB)], #[pg(UUID)]",
         )
     })
+}
+
+fn is_option(ty: &Type) -> bool {
+    if let Type::Path(tp) = ty {
+        if let Some(last) = tp.path.segments.last() {
+            return last.ident == "Option";
+        }
+    }
+    false
+}
+
+fn field_ddl_info(field: &syn::Field) -> syn::Result<(String, bool)> {
+    let nullable = is_option(&field.ty);
+    for attr in &field.attrs {
+        if attr.path().is_ident("pg") {
+            let variant = attr.parse_args::<Ident>()?;
+            return Ok((variant.to_string(), nullable));
+        }
+    }
+    infer_ddl_type(&field.ty)
+        .map(|t| (t, nullable))
+        .ok_or_else(|| {
+            syn::Error::new_spanned(
+                &field.ty,
+                "cannot infer PostgreSQL type for this field; annotate it with #[pg(TYPE)], \
+                 e.g. #[pg(TIMESTAMPTZ)], #[pg(JSONB)], #[pg(UUID)]",
+            )
+        })
+}
+
+fn infer_ddl_type(ty: &Type) -> Option<String> {
+    match ty {
+        Type::Path(tp) => {
+            let last = tp.path.segments.last()?;
+            let name = last.ident.to_string();
+
+            if name == "Option" {
+                if let PathArguments::AngleBracketed(ab) = &last.arguments {
+                    if let Some(GenericArgument::Type(inner)) = ab.args.first() {
+                        return infer_ddl_type(inner);
+                    }
+                }
+                return None;
+            }
+
+            if name == "Vec" {
+                if let PathArguments::AngleBracketed(ab) = &last.arguments {
+                    if let Some(GenericArgument::Type(Type::Path(inner))) = ab.args.first() {
+                        if inner.path.is_ident("u8") {
+                            return Some("BYTEA".to_string());
+                        }
+                    }
+                }
+                return None;
+            }
+
+            Some(
+                match name.as_str() {
+                    "bool" => "BOOLEAN",
+                    "i8" | "i16" => "SMALLINT",
+                    "i32" => "INTEGER",
+                    "i64" => "BIGINT",
+                    "f32" => "REAL",
+                    "f64" => "DOUBLE PRECISION",
+                    "String" => "TEXT",
+                    "NaiveDate" => "DATE",
+                    "NaiveTime" => "TIME",
+                    "NaiveDateTime" => "TIMESTAMP",
+                    "DateTime" => "TIMESTAMPTZ",
+                    "Uuid" => "UUID",
+                    _ => return None,
+                }
+                .to_string(),
+            )
+        }
+        Type::Reference(tr) => {
+            if let Type::Path(inner) = tr.elem.as_ref() {
+                if inner.path.is_ident("str") {
+                    return Some("TEXT".to_string());
+                }
+            }
+            None
+        }
+        _ => None,
+    }
 }
 
 fn infer_pg_type(ty: &Type) -> Option<TokenStream2> {

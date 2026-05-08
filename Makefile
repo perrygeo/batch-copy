@@ -44,5 +44,10 @@ test-examples: test
 	cargo run --quiet --example load_csv 
 	psql ${DATABASE_URL} -c "SELECT count(*) FROM spotprices" | grep 9000
 
+test-fail:
+	export DATABASE_URL=${DATABASE_URL}
+	psql ${DATABASE_URL} -c "DROP TABLE IF EXISTS metrics;"
+	if cargo run --quiet --example basic; then exit 1; else echo "failed successfully"; fi
+
 watch:
 	cargo watch -w src --shell 'make test'

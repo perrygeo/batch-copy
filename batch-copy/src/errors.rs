@@ -6,6 +6,12 @@ pub enum BatchCopyDatabaseError {
     BadConnection,
     #[error("Database error")]
     BadTable(#[from] tokio_postgres::Error),
+    #[error("Table schema check failed: {source}\n\nHint — try running:\n{ddl}")]
+    SchemaCheckFailed {
+        #[source]
+        source: tokio_postgres::Error,
+        ddl: String,
+    },
     #[error("unknown data store error")]
     Unknown,
 }

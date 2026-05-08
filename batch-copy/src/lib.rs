@@ -28,6 +28,7 @@ pub trait BatchCopyRow {
     const TYPES: &'static [Type];
     const COPY_STATEMENT: &'static str;
     const CHECK_STATEMENT: &'static str;
+    const DDL_STATEMENT: &'static str;
 
     fn binary_copy_vec(&self) -> Vec<Box<dyn ToSql + Sync + Send + '_>>;
 }
