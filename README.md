@@ -162,6 +162,21 @@ struct Event {
 }
 ```
 
+## Performance
+
+How much faster is COPY?
+
+```text,ignore
+$ cargo run --release --example benchmark
+   Compiling batch-copy v0.1.0 (...)
+    Finished `release` profile [optimized] target(s) in 2.08s
+     Running `target/release/examples/benchmark`
+rows inserted: 250000
+plain INSERT (1 txn): 15.843347826s (15779 rows/sec)
+batch COPY:           2.232294222s (111992 rows/sec)
+speedup:              7.1x
+```
+
 ## DDL generation
 
 `copier.ddl()` returns a best-approximation `CREATE TABLE` statement based on the struct's field names and types. This is useful for bootstrapping a new table or quickly checking the expected schema:
