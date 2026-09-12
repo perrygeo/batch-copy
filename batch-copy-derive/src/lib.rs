@@ -56,6 +56,14 @@ fn derive_impl(input: DeriveInput) -> syn::Result<TokenStream2> {
         "COPY {} ({}) FROM STDIN (FORMAT binary)",
         table_name, columns
     );
+    let copy_out_no_filter = format!(
+        "COPY (SELECT {} FROM {}) TO STDOUT (FORMAT binary)",
+        columns, table_name
+    );
+    let copy_out_with_filter = format!(
+        "COPY (SELECT {} FROM {} WHERE {{}}) TO STDOUT (FORMAT binary)",
+        columns, table_name
+    );
 
     let pg_types: Vec<TokenStream2> = fields
         .iter()
@@ -67,9 +75,19 @@ fn derive_impl(input: DeriveInput) -> syn::Result<TokenStream2> {
         .map(|f| f.ident.as_ref().unwrap())
         .collect();
 
+    let field_types: Vec<&Type> = fields.iter().map(|f| &f.ty).collect();
+
     let pushes = field_idents.iter().map(|id| {
         quote! { out.push(&self.#id as &(dyn ::batch_copy::__private::ToSql + Sync)); }
     });
+
+    let from_row_fields = field_idents
+        .iter()
+        .zip(&field_types)
+        .enumerate()
+        .map(|(i, (id, ty))| {
+            quote! { #id: row.try_get::<#ty>(#i)? }
+        });
 
     let ddl_infos: Vec<(String, bool)> = fields
         .iter()
@@ -104,6 +122,19 @@ fn derive_impl(input: DeriveInput) -> syn::Result<TokenStream2> {
             ];
             fn fill_copy_refs<'a>(&'a self, out: &mut ::std::vec::Vec<&'a (dyn ::batch_copy::__private::ToSql + Sync)>) {
                 #(#pushes)*
+            }
+
+            fn copy_out_statement(where_clause: ::std::option::Option<&str>) -> ::std::string::String {
+                match where_clause {
+                    ::std::option::Option::Some(clause) => ::std::format!(#copy_out_with_filter, clause),
+                    ::std::option::Option::None => #copy_out_no_filter.to_string(),
+                }
+            }
+
+            fn try_from_row(row: &::batch_copy::__private::BinaryCopyOutRow) -> ::std::result::Result<Self, ::batch_copy::__private::Error> {
+                Ok(Self {
+                    #(#from_row_fields),*
+                })
             }
         }
     })
