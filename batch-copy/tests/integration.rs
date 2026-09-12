@@ -62,7 +62,7 @@ async fn test_copy_actor() {
 #[tokio::test]
 async fn test_copy_out_roundtrip() {
     let url = std::env::var("DATABASE_URL")
-        .unwrap_or("postgresql://postgres:[REDACTED]@localhost:5432/postgres".to_owned());
+        .unwrap_or("postgresql://postgres:password@localhost:5432/postgres".to_owned());
 
     let (client, connection) = tokio_postgres::connect(url.as_ref(), NoTls).await.unwrap();
     tokio::spawn(async move {
