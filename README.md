@@ -2,7 +2,7 @@
 
 [![batch-copy](https://github.com/perrygeo/batch-copy/actions/workflows/tests.yml/badge.svg)](https://github.com/perrygeo/batch-copy/actions/workflows/tests.yml)
 
-An async Rust library for high-throughput ingestion into PostgreSQL using binary `COPY`.
+A Rust library for high-throughput asynchronous PostgreSQL I/O using the [binary `COPY` protocol](https://www.postgresql.org/docs/current/sql-copy.html).
 
 `batch-copy` batches rows from many concurrent producers into efficient bulk `COPY` transactions.
 The actor task receives rows on an MPSC channel, buffers them, and periodically flushes to Postgres —
@@ -79,7 +79,7 @@ async fn main() {
 
 `Copier` is cheap to clone — move clones into as many tokio tasks as you need:
 
-```rust,no_run
+```rust,ignore
 let mut tasks = vec![];
 for i in 0..2048_i64 {
     let copier = copier.clone();
@@ -92,6 +92,41 @@ for i in 0..2048_i64 {
 for t in tasks { t.await.unwrap(); }
 copier.flush().await;
 ```
+
+## Reading with `Reader`
+
+`Reader` copies rows *out* of Postgres back into a `Vec<T>`. It is a separate type from the
+write-only `Copier`, but uses the same `BatchCopy` derive and the same `Configuration`:
+
+```rust,no_run
+use batch_copy::{BatchCopy, Configuration, Reader};
+
+#[derive(Debug, Clone, PartialEq, BatchCopy)]
+#[batch_copy(table = "metrics")]
+struct RequestMetric {
+    url: String,
+    latency_ms: i64,
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let url = std::env::var("DATABASE_URL").unwrap();
+    let read_cfg = Configuration::new().database_url(url).build();
+    let reader = Reader::<RequestMetric>::new(read_cfg).await?;
+
+    // Fetch every row into a Vec
+    let all = reader.fetch(None).await?;
+
+    // Or filter with a WHERE-only fragment
+    let slow = reader.fetch(Some("latency_ms > 100")).await?;
+
+    Ok(())
+}
+```
+
+`fetch` takes an `Option<&str>` where fragment. The clause is interpolated verbatim into the
+generated `COPY (SELECT ...) TO STDOUT` statement and cannot be parameterized, so quote any
+untrusted values yourself.
 
 ## Type mapping
 
@@ -116,7 +151,7 @@ copier.flush().await;
 
 For any type not in this list, annotate the field with `#[pg(TYPE)]`:
 
-```rust,no_run
+```rust,ignore
 #[derive(Debug, Clone, BatchCopy)]
 struct Event {
     id: i64,
@@ -131,7 +166,7 @@ struct Event {
 
 `copier.ddl()` returns a best-approximation `CREATE TABLE` statement based on the struct's field names and types. This is useful for bootstrapping a new table or quickly checking the expected schema:
 
-```rust,no_run
+```rust,ignore
 let copier = Copier::<RequestMetric>::new(copy_cfg).await?;
 println!("{}", copier.ddl());
 // CREATE TABLE metrics (
@@ -144,7 +179,7 @@ println!("{}", copier.ddl());
 
 If `Copier::new()` fails because the schema check query returns an error (table missing, column type mismatch, etc.), the error message automatically includes the DDL hint so you know exactly what to run:
 
-```
+```text,ignore
 Table schema check failed: relation "metrics" does not exist
 
 Hint — try running:
@@ -159,8 +194,10 @@ CREATE TABLE metrics (
 All settings are optional and have sensible defaults:
 
 ```rust,no_run
+
+use batch_copy::{Configuration};
 let copy_cfg = Configuration::new()
-    .database_url(url)
+    .database_url("postgresql://postgres:password@localhost:5432/db".into())
     // Flush at least this often (milliseconds)
     .flush_timer_ms(1000)
     // Or flush when this many rows have accumulated

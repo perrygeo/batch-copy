@@ -43,6 +43,7 @@ test-examples: test
 	@psql ${DATABASE_URL} -c "CREATE TABLE spotprices (dt TIMESTAMPTZ, instance TEXT, os TEXT, region TEXT, az TEXT, price FLOAT8);"
 	cargo run --quiet --example load_csv 
 	@psql ${DATABASE_URL} -c "SELECT count(*) FROM spotprices" | grep 9000 > /dev/null
+	cargo run --quiet --example roundtrip
 
 test-fail:
 	export DATABASE_URL=${DATABASE_URL}
