@@ -66,7 +66,7 @@ async fn main() -> Result<()> {
         env!("CARGO_MANIFEST_DIR")
     ))?;
     let url = std::env::var("DATABASE_URL")
-        .unwrap_or("postgresql://postgres:[REDACTED]@localhost:5432/postgres".to_owned());
+        .unwrap_or("postgresql://postgres:password@localhost:5432/postgres".to_owned());
 
     // Fetch the csv contents into memory
     let mut orig_spot_prices: Vec<SpotPrice> = Vec::new();
