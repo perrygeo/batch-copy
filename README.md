@@ -164,18 +164,29 @@ struct Event {
 
 ## Performance
 
-How much faster is COPY?
+How much faster is COPY? Generally significant compared to INSERTs:
 
 ```text,ignore
 $ cargo run --release --example benchmark
-   Compiling batch-copy v0.1.0 (...)
-    Finished `release` profile [optimized] target(s) in 2.08s
+    Finished `release` profile [optimized] target(s) in ...s
      Running `target/release/examples/benchmark`
 rows inserted: 250000
 plain INSERT (1 txn): 15.843347826s (15779 rows/sec)
 batch COPY:           2.232294222s (111992 rows/sec)
 speedup:              7.1x
 ```
+
+And only a slight improvement compared to SELECT:
+
+```text,ignore
+$ cargo run --release --example benchmark-read
+    Finished `release` profile [optimized] target(s) in ...s
+     Running `target/release/examples/benchmark-read`
+rows read: 750000
+plain SELECT:     208.909744ms (3590067 rows/sec)
+batch COPY OUT:   162.60214ms (4612485 rows/sec)
+speedup:          1.3x
+````
 
 ## DDL generation
 
@@ -227,3 +238,4 @@ let copy_cfg = Configuration::new()
     .pool_max_lifetime_sec(1200)
     .build();
 ```
+
